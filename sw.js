@@ -1,5 +1,5 @@
 /* Service worker — cache app-shell agar bisa offline & di-install */
-var CACHE = 'kasir-depot-v1';
+var CACHE = 'kasir-depot-v2';
 var ASSETS = [
   './',
   './index.html',
