@@ -1,0 +1,1 @@
+{"background_color":"#f2f7fb","description":"Aplikasi kasir offline untuk depot air minum + ongkir antar zona","display":"standalone","icons":[{"purpose":"any","sizes":"any","src":"icon.svg","type":"image/svg+xml"}],"lang":"id","name":"Kasir Depot Air","orientation":"portrait","scope":"./","short_name":"Kasir Depot","start_url":"./index.html","theme_color":"#0b6fa4"}

@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kasir Depot Air</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0b6fa4">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <h1 id="storeTitle">Kasir Depot Air</h1>
+  <div class="date" id="todayLabel"></div>
+</header>
+
+<main>
+  <!-- 1. KASIR -->
+  <section id="tab-kasir" class="tab active">
+    <div class="card">
+      <h3>Produk</h3>
+      <div id="kasirProducts" class="prod-grid"></div>
+    </div>
+    <div class="card">
+      <h3>Pelanggan &amp; Pengiriman</h3>
+      <label class="lbl" for="kasirCustSearch">Cari pelanggan</label>
+      <input type="text" id="kasirCustSearch" placeholder="Ketik nama..." autocomplete="off">
+      <label class="lbl" for="kasirCustomer">Pelanggan</label>
+      <select id="kasirCustomer"></select>
+      <label class="lbl">Mode</label>
+      <div class="seg" id="kasirMode">
+        <button data-mode="antar" class="on">Diantar</button>
+        <button data-mode="ambil">Diambil sendiri</button>
+      </div>
+      <div id="kasirShipBox" class="mt">
+        <div class="row between">
+          <span>Ongkir <span id="kasirZoneName" class="muted"></span></span>
+          <strong id="kasirShipFee">Rp0</strong>
+        </div>
+        <label class="lbl" for="kasirFeeOverride">Ubah ongkir manual (opsional)</label>
+        <input type="number" id="kasirFeeOverride" min="0" step="500" placeholder="Kosongkan = ikut tarif zona">
+      </div>
+    </div>
+    <div class="card">
+      <h3>Pembayaran</h3>
+      <div class="paygrid" id="kasirPay">
+        <button data-pay="tunai" class="on">Tunai</button>
+        <button data-pay="transfer">Transfer</button>
+        <button data-pay="qris">QRIS</button>
+        <button data-pay="hutang">Hutang</button>
+      </div>
+      <label class="lbl" for="kasirPayAmount">Jumlah bayar (Rp)</label>
+      <input type="number" id="kasirPayAmount" min="0" step="500" placeholder="0">
+      <div class="cashgrid" id="kasirCashQuick"></div>
+      <div class="row between mt">
+        <span>Subtotal air</span><strong id="kasirSubtotal">Rp0</strong>
+      </div>
+      <div class="row between">
+        <span>Ongkir</span><strong id="kasirShipTotal">Rp0</strong>
+      </div>
+      <div class="row between" style="font-size:19px">
+        <span><strong>TOTAL</strong></span><strong id="kasirTotal">Rp0</strong>
+      </div>
+      <div class="row between mt">
+        <span class="muted">Kembalian</span><strong id="kasirChange">Rp0</strong>
+      </div>
+      <div class="row between">
+        <span class="muted">Sisa hutang</span><strong id="kasirDebt">Rp0</strong>
+      </div>
+      <button class="btn block" id="kasirSave">Simpan Transaksi</button>
+    </div>
+  </section>
+
+  <!-- 2. STRUK -->
+  <section id="tab-struk" class="tab">
+    <div id="strukEmpty" class="card muted">Belum ada struk. Buat transaksi dulu di tab Kasir.</div>
+    <div id="strukWrap" class="hidden">
+      <div class="receipt" id="strukText"></div>
+      <div class="btnrow mt">
+        <button class="btn secondary" id="strukWA">Kirim via WA</button>
+        <button class="btn secondary" id="strukNew">Transaksi Baru</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. RIWAYAT -->
+  <section id="tab-riwayat" class="tab">
+    <div class="card">
+      <h3>Filter tanggal</h3>
+      <div class="row">
+        <div style="flex:1"><label class="lbl">Dari</label><input type="date" id="riwFrom"></div>
+        <div style="flex:1"><label class="lbl">Sampai</label><input type="date" id="riwTo"></div>
+      </div>
+      <button class="btn secondary block" id="riwToday">Tampilkan hari ini</button>
+    </div>
+    <div id="riwayatList"></div>
+  </section>
+
+  <!-- 4. PRODUK -->
+  <section id="tab-produk" class="tab">
+    <div class="card">
+      <h3>Tambah / ubah produk</h3>
+      <input type="hidden" id="prodId">
+      <label class="lbl" for="prodName">Nama produk</label>
+      <input type="text" id="prodName" placeholder="cth: Isi Ulang Galon 19L">
+      <label class="lbl" for="prodPrice">Harga (Rp)</label>
+      <input type="number" id="prodPrice" min="0" step="500" placeholder="8000">
+      <label class="lbl" for="prodStock">Stok</label>
+      <input type="number" id="prodStock" step="1" placeholder="0">
+      <div class="btnrow mt">
+        <button class="btn" id="prodSave">Simpan</button>
+        <button class="btn secondary" id="prodCancel">Batal</button>
+      </div>
+    </div>
+    <div id="produkList"></div>
+  </section>
+
+  <!-- 5. PELANGGAN -->
+  <section id="tab-pelanggan" class="tab">
+    <div class="card">
+      <h3>Tambah / ubah pelanggan</h3>
+      <input type="hidden" id="custId">
+      <label class="lbl" for="custName">Nama</label>
+      <input type="text" id="custName" placeholder="cth: Bu Ani">
+      <label class="lbl" for="custWa">No. WA (cth: 0812...)</label>
+      <input type="text" id="custWa" placeholder="08xxxxxxxxxx" inputmode="tel">
+      <label class="lbl" for="custZone">Zona ongkir</label>
+      <select id="custZone"></select>
+      <div class="btnrow mt">
+        <button class="btn" id="custSave">Simpan</button>
+        <button class="btn secondary" id="custCancel">Batal</button>
+      </div>
+    </div>
+    <div id="pelangganList"></div>
+  </section>
+
+  <!-- 6. LAPORAN -->
+  <section id="tab-laporan" class="tab">
+    <div class="card">
+      <h3>Periode</h3>
+      <div class="paygrid" id="lapPeriod">
+        <button data-p="today" class="on">Hari ini</button>
+        <button data-p="7">7 hari</button>
+        <button data-p="30">30 hari</button>
+        <button data-p="custom">Pilih</button>
+      </div>
+      <div id="lapCustom" class="hidden mt">
+        <div class="row">
+          <div style="flex:1"><label class="lbl">Dari</label><input type="date" id="lapFrom"></div>
+          <div style="flex:1"><label class="lbl">Sampai</label><input type="date" id="lapTo"></div>
+        </div>
+      </div>
+    </div>
+    <div class="statgrid">
+      <div class="stat"><div class="v" id="lapOmzetAir">Rp0</div><div class="k">Omzet air</div></div>
+      <div class="stat"><div class="v" id="lapOmzetOngkir">Rp0</div><div class="k">Omzet ongkir</div></div>
+      <div class="stat"><div class="v" id="lapTotal">Rp0</div><div class="k">Total omzet</div></div>
+      <div class="stat"><div class="v" id="lapCount">0</div><div class="k">Transaksi</div></div>
+    </div>
+    <div class="card mt">
+      <h3>Daftar hutang pelanggan</h3>
+      <div id="lapDebts"></div>
+    </div>
+  </section>
+
+  <!-- 7. PENGATURAN -->
+  <section id="tab-pengaturan" class="tab">
+    <div class="card">
+      <h3>Toko</h3>
+      <label class="lbl" for="setStoreName">Nama toko (tampil di struk)</label>
+      <input type="text" id="setStoreName">
+      <button class="btn block" id="setSaveStore">Simpan nama toko</button>
+    </div>
+    <div class="card">
+      <h3>Zona ongkir</h3>
+      <div id="zoneList"></div>
+      <hr class="divider">
+      <input type="hidden" id="zoneId">
+      <label class="lbl" for="zoneName">Nama zona</label>
+      <input type="text" id="zoneName" placeholder="cth: Desa Baru">
+      <label class="lbl" for="zoneFee">Tarif per antar (Rp)</label>
+      <input type="number" id="zoneFee" min="0" step="500" placeholder="3000">
+      <div class="btnrow mt">
+        <button class="btn" id="zoneSave">Simpan zona</button>
+        <button class="btn secondary" id="zoneCancel">Batal</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Sinkronisasi (antar HP via Google Sheets)</h3>
+      <div id="syncStatus" class="alert">Belum diatur.</div>
+      <label class="lbl" for="syncUrl">URL Web App (Apps Script)</label>
+      <input type="text" id="syncUrl" placeholder="https://script.google.com/macros/s/.../exec" inputmode="url">
+      <div class="btnrow mt">
+        <button class="btn secondary" id="syncSaveUrl">Simpan URL</button>
+        <button class="btn" id="syncNowBtn">Sinkron Sekarang</button>
+      </div>
+      <div class="small muted mt">Butuh internet saat sinkron. Saat offline semua transaksi tetap tercatat di HP dan terkirim otomatis begitu online.</div>
+    </div>
+    <div class="card">
+      <h3>Backup data</h3>
+      <div class="btnrow">
+        <button class="btn secondary" id="setExport">Export JSON</button>
+        <button class="btn secondary" id="setImportBtn">Import JSON</button>
+      </div>
+      <input type="file" id="setImport" accept="application/json" class="hidden">
+      <button class="btn danger block" id="setWipe">Hapus SEMUA data</button>
+    </div>
+  </section>
+</main>
+
+<nav class="bottomnav" id="bottomnav">
+  <button data-tab="kasir" class="active">Kasir</button>
+  <button data-tab="struk">Struk</button>
+  <button data-tab="riwayat">Riwayat</button>
+  <button data-tab="produk">Produk</button>
+  <button data-tab="pelanggan">Pelanggan</button>
+  <button data-tab="laporan">Laporan</button>
+  <button data-tab="pengaturan">Atur</button>
+</nav>
+
+<script src="app-logic.js"></script>
+<script src="sync.js"></script>
+<script src="app-ui.js"></script>
+</body>
+</html>
