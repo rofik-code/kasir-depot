@@ -131,11 +131,19 @@
     });
   }
 
-  // Urutan aman: dorong antrian dulu, lalu seed bila perlu, lalu tarik
+  // Urutan aman: dorong antrian dulu, lalu seed bila perlu, lalu tarik.
+  // Guard anti-balapan: sinkron yang sedang berjalan tidak boleh ditumpuk
+  // (mis. auto-sync saat buka app + ketuk "Sinkron Sekarang" bersamaan).
+  var syncing = false;
   function syncNow(baseUrl, store, fetchFn) {
+    if (syncing) return Promise.resolve({ skipped: true, ok: true });
+    syncing = true;
+    function done(res) { syncing = false; return res; }
+    function fail(err) { syncing = false; throw err; }
     return pushOutbox(baseUrl, store, fetchFn)
       .then(function () { return seedServerIfEmpty(baseUrl, store, fetchFn); })
-      .then(function () { return pull(baseUrl, store, fetchFn); });
+      .then(function () { return pull(baseUrl, store, fetchFn); })
+      .then(done, fail);
   }
 
   var api = {
