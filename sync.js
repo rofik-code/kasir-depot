@@ -26,13 +26,15 @@
     return f(url, { method: 'GET' }).then(function (r) { return r.json(); });
   }
 
-  function apiPost(baseUrl, action, payload, fetchFn) {
+  // Semua tulis via GET + payload di query string (bukan POST JSON):
+  // Apps Script tidak menangani preflight CORS untuk POST, sedangkan
+  // doGet backend sudah mendukung ?action=X&payload={...}.
+  function apiCall(baseUrl, action, payload, fetchFn) {
     var f = fetchFn || fetch;
-    return f(baseUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: action, payload: payload || {} })
-    }).then(function (r) { return r.json(); });
+    var url = baseUrl + (baseUrl.indexOf('?') >= 0 ? '&' : '?') +
+      'action=' + encodeURIComponent(action) +
+      '&payload=' + encodeURIComponent(JSON.stringify(payload || {}));
+    return f(url, { method: 'GET' }).then(function (r) { return r.json(); });
   }
 
   /* ---------- outbox ---------- */
@@ -54,7 +56,7 @@
       queueOp(store, action, payload);
       return Promise.resolve({ sent: false, queued: true });
     }
-    return apiPost(baseUrl, action, payload, fetchFn).then(function (res) {
+    return apiCall(baseUrl, action, payload, fetchFn).then(function (res) {
       if (res && res.ok) return { sent: true, queued: false };
       queueOp(store, action, payload);
       return { sent: false, queued: true };
@@ -74,7 +76,7 @@
         return Promise.resolve({ sent: sent, remaining: 0, failed: false });
       }
       var op = q[0];
-      return apiPost(baseUrl, op.action, op.payload, fetchFn).then(function (res) {
+      return apiCall(baseUrl, op.action, op.payload, fetchFn).then(function (res) {
         if (res && res.ok) {
           q.shift();
           sent++;
@@ -113,7 +115,7 @@
     var count = 0;
     function enq(action, payload) {
       chain = chain.then(function () {
-        return apiPost(baseUrl, action, payload, fetchFn).then(function () { count++; });
+        return apiCall(baseUrl, action, payload, fetchFn).then(function () { count++; });
       });
     }
     return apiGet(baseUrl, 'getAll', fetchFn).then(function (res) {
@@ -138,7 +140,7 @@
 
   var api = {
     apiGet: apiGet,
-    apiPost: apiPost,
+    apiCall: apiCall,
     queueOp: queueOp,
     getOutbox: getOutbox,
     sendOrQueue: sendOrQueue,
